@@ -1,0 +1,43 @@
+pipeline {
+    agent any
+
+    environment {
+        IMAGE_NAME = "jenkins-custom"
+        DOCKER_USER = "niaofnarnia"
+        IMAGE_VERSION = "v1.01"
+    }
+
+    stages {
+        stage('Tag Docker Image') {
+            steps {
+                script {
+                    sh "docker tag ${IMAGE_NAME}:latest ${DOCKER_USER}/${IMAGE_NAME}:${IMAGE_VERSION}"
+                }
+            }
+        }
+
+        stage('Login to DockerHub') {
+            steps {
+                script {
+                    withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                        sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
+                    }
+                }
+            }
+        }
+
+        stage('Push to DockerHub') {
+            steps {
+                script {
+                    sh "docker push ${DOCKER_USER}/${IMAGE_NAME}:${IMAGE_VERSION}"
+                }
+            }
+        }
+
+        stage('Done') {
+            steps {
+                echo "Image tagged and pushed successfully."
+            }
+        }
+    }
+}
